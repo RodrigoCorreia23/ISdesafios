@@ -1,0 +1,4 @@
+lxml
+tk
+flask
+musql-connector-python

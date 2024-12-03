@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  db:
+    build: ./db
+    environment:
+      MYSQL_ROOT_PASSWORD: ROOT_PASSWORD
+      MYSQL_DATABASE: myDB
+    ports:
+      - "3306:3306"
+
+  app:
+    build: ./app
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"
