@@ -59,6 +59,27 @@ class SendFileService(server_services_pb2_grpc.SendFileServiceServicer):
             context.set_code(grpc.StatusCode.INTERNAL)
             return server_services_pb2.SendFileResponseBody(success=False)
 
+    def SendFileChunks(self, request_iterator, context):
+        try:
+            os.makedirs(MEDIA_PATH, exist_ok=True)
+            file_name = None
+            file_chunks = []  # Store all chunks in memory
+            for chunk in request_iterator:
+                if not file_name:
+                    file_name = chunk.file_name
+                # Collect the file data chunks
+                file_chunks.append(chunk.data)
+            # Combine all chunks into a single bytes object
+            file_content = b"".join(file_chunks)
+            file_path = os.path.join(MEDIA_PATH, file_name)
+            # Write the collected data to the file at the end
+            with open(file_path, "wb") as f:
+                f.write(file_content)
+            return server_services_pb2.SendFileChunksResponse(success=True, message='File imported')
+        except Exception as e:
+            logger.error(f"Error: {str(e)}", exc_info=True)
+            return server_services_pb2.SendFileChunksResponse(success=False, message=str(e))
+
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=MAX_WORKERS))
     # Consult the file "server_services_pb2_grpc" to see the name of the function generated to add the service to the server
