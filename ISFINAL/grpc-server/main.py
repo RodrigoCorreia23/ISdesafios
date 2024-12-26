@@ -1,11 +1,29 @@
 from concurrent import futures
-from settings import GRPC_SERVER_PORT, MAX_WORKERS, MEDIA_PATH, DB_CONFIG
 import os
 import server_services_pb2_grpc
 import server_services_pb2
 import grpc
 import logging
 import pg8000
+import pika
+
+# Import environment variables
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
+RABBITMQ_PORT = os.getenv("RABBITMQ_PORT", "5672")
+RABBITMQ_USER = os.getenv("RABBITMQ_USER", "user")
+RABBITMQ_PW = os.getenv("RABBITMQ_PW", "password")
+DBNAME = os.getenv("DBNAME", "mydatabase")
+DBUSERNAME = os.getenv("DBUSERNAME", "myuser")
+DBPASSWORD = os.getenv("DBPASSWORD", "mypassword")
+DBHOST = os.getenv("DBHOST", "db")
+DBPORT = os.getenv("DBPORT", "5432")
+GRPC_SERVER_PORT = os.getenv("GRPC_SERVER_PORT", "50051")
+
+# Define media path
+MEDIA_PATH = os.getenv("MEDIA_PATH", "/path/to/media") #???????????? do we need this?
+
+# Define max workers for gRPC server
+MAX_WORKERS = int(os.getenv("MAX_WORKERS", "10"))
 
 # Configure logging
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -23,17 +41,17 @@ class SendFileService(server_services_pb2_grpc.SendFileServiceServicer):
         ficheiro_em_bytes = request.file
         with open(file_path, 'wb') as f:
             f.write(ficheiro_em_bytes)
-        logger.info(f"{DB_CONFIG['DBHOST']}:{DB_CONFIG['DBPORT']}", exc_info=True)
+        logger.info(f"{DBHOST}:{DBPORT}", exc_info=True)
         
         # Establish connection to PostgreSQL
         try:
             # Connect to the database
             conn = pg8000.connect(
-                user=DB_CONFIG['DBUSERNAME'], 
-                password=DB_CONFIG['DBPASSWORD'], 
-                host=DB_CONFIG['DBHOST'], 
-                port=DB_CONFIG['DBPORT'], 
-                database=DB_CONFIG['DBNAME']
+                user=DBUSERNAME, 
+                password=DBPASSWORD, 
+                host=DBHOST, 
+                port=DBPORT, 
+                database=DBNAME
             )
             cursor = conn.cursor()
             
@@ -61,6 +79,13 @@ class SendFileService(server_services_pb2_grpc.SendFileServiceServicer):
 
     def SendFileChunks(self, request_iterator, context):
         try:
+            rabbit_connection = pika.BlockingConnection(pika.ConnectionParameters(
+                host=RABBITMQ_HOST,
+                port=RABBITMQ_PORT,
+                credentials=pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PW)
+            ))
+            rabbit_channel = rabbit_connection.channel()
+            rabbit_channel.queue_declare(queue='csv_chunks')
             os.makedirs(MEDIA_PATH, exist_ok=True)
             file_name = None
             file_chunks = []  # Store all chunks in memory
@@ -69,6 +94,12 @@ class SendFileService(server_services_pb2_grpc.SendFileServiceServicer):
                     file_name = chunk.file_name
                 # Collect the file data chunks
                 file_chunks.append(chunk.data)
+                # Send data chunk to the worker
+                rabbit_channel.basic_publish(exchange='',
+                                             routing_key='csv_chunks', body=chunk.data)
+            # Send info that the file stream ended
+            rabbit_channel.basic_publish(exchange='',
+                                         routing_key='csv_chunks', body="__EOF__")
             # Combine all chunks into a single bytes object
             file_content = b"".join(file_chunks)
             file_path = os.path.join(MEDIA_PATH, file_name)
