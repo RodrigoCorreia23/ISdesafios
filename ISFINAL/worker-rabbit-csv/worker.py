@@ -36,18 +36,18 @@ def process_message(ch, method, properties, body):
             df = pd.read_csv(csvfile)
             print(df)
             # call a function to save the df data to a database
-            reassembled_data.clear()
-        else:
-            print(body)
+        reassembled_data.clear()
     else:
+        print(body)
         reassembled_data.append(body)
+
 def main():
     credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PW)
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST,port=RABBITMQ_PORT, credentials=credentials))
-
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+        host=RABBITMQ_HOST, port=RABBITMQ_PORT, credentials=credentials))
     channel = connection.channel()
     channel.queue_declare(queue=QUEUE_NAME)
-    channel.basic_consume(queue=QUEUE_NAME,on_message_callback=process_message, auto_ack=True)
+    channel.basic_consume(queue=QUEUE_NAME, on_message_callback=process_message, auto_ack=True)
     logger.info(f"Waiting for messages...", exc_info=True)
     channel.start_consuming()
 
