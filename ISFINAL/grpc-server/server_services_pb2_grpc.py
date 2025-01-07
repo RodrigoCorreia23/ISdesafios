@@ -5,7 +5,7 @@ import warnings
 
 import server_services_pb2 as server__services__pb2
 
-GRPC_GENERATED_VERSION = '1.68.0'
+GRPC_GENERATED_VERSION = '1.68.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -26,7 +26,7 @@ if _version_not_supported:
 
 
 class SendFileServiceStub(object):
-    """Service definition
+    """Serviço SendFileService para envio de arquivos
     """
 
     def __init__(self, channel):
@@ -48,7 +48,7 @@ class SendFileServiceStub(object):
 
 
 class SendFileServiceServicer(object):
-    """Service definition
+    """Serviço SendFileService para envio de arquivos
     """
 
     def SendFile(self, request, context):
@@ -85,7 +85,7 @@ def add_SendFileServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class SendFileService(object):
-    """Service definition
+    """Serviço SendFileService para envio de arquivos
     """
 
     @staticmethod
@@ -132,6 +132,124 @@ class SendFileService(object):
             '/server_services.SendFileService/SendFileChunks',
             server__services__pb2.SendFileChunksRequest.SerializeToString,
             server__services__pb2.SendFileChunksResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+
+class FileServiceStub(object):
+    """Serviço FileService para processamento de CSV, validação de XML e consulta de estados
+    """
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.ProcessCSV = channel.unary_unary(
+                '/server_services.FileService/ProcessCSV',
+                request_serializer=server__services__pb2.CSVRequest.SerializeToString,
+                response_deserializer=server__services__pb2.CoordinatesResponse.FromString,
+                _registered_method=True)
+        self.GetStatesByCountry = channel.unary_unary(
+                '/server_services.FileService/GetStatesByCountry',
+                request_serializer=server__services__pb2.CountryRequest.SerializeToString,
+                response_deserializer=server__services__pb2.StatesResponse.FromString,
+                _registered_method=True)
+
+
+class FileServiceServicer(object):
+    """Serviço FileService para processamento de CSV, validação de XML e consulta de estados
+    """
+
+    def ProcessCSV(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetStatesByCountry(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_FileServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'ProcessCSV': grpc.unary_unary_rpc_method_handler(
+                    servicer.ProcessCSV,
+                    request_deserializer=server__services__pb2.CSVRequest.FromString,
+                    response_serializer=server__services__pb2.CoordinatesResponse.SerializeToString,
+            ),
+            'GetStatesByCountry': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetStatesByCountry,
+                    request_deserializer=server__services__pb2.CountryRequest.FromString,
+                    response_serializer=server__services__pb2.StatesResponse.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'server_services.FileService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers('server_services.FileService', rpc_method_handlers)
+
+
+ # This class is part of an EXPERIMENTAL API.
+class FileService(object):
+    """Serviço FileService para processamento de CSV, validação de XML e consulta de estados
+    """
+
+    @staticmethod
+    def ProcessCSV(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/server_services.FileService/ProcessCSV',
+            server__services__pb2.CSVRequest.SerializeToString,
+            server__services__pb2.CoordinatesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetStatesByCountry(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/server_services.FileService/GetStatesByCountry',
+            server__services__pb2.CountryRequest.SerializeToString,
+            server__services__pb2.StatesResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15server_services.proto\x12\x0fserver_services\"I\n\x13SendFileRequestBody\x12\x0c\n\x04\x66ile\x18\x01 \x01(\x0c\x12\x11\n\tfile_mime\x18\x02 \x01(\t\x12\x11\n\tfile_name\x18\x03 \x01(\t\"\'\n\x14SendFileResponseBody\x12\x0f\n\x07success\x18\x01 \x01(\x08\"8\n\x15SendFileChunksRequest\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x11\n\tfile_name\x18\x02 \x01(\t\":\n\x16SendFileChunksResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2\xcf\x01\n\x0fSendFileService\x12W\n\x08SendFile\x12$.server_services.SendFileRequestBody\x1a%.server_services.SendFileResponseBody\x12\x63\n\x0eSendFileChunks\x12&.server_services.SendFileChunksRequest\x1a\'.server_services.SendFileChunksResponse(\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15server_services.proto\x12\x0fserver_services\"I\n\x13SendFileRequestBody\x12\x0c\n\x04\x66ile\x18\x01 \x01(\x0c\x12\x11\n\tfile_mime\x18\x02 \x01(\t\x12\x11\n\tfile_name\x18\x03 \x01(\t\"\'\n\x14SendFileResponseBody\x12\x0f\n\x07success\x18\x01 \x01(\x08\"8\n\x15SendFileChunksRequest\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x11\n\tfile_name\x18\x02 \x01(\t\":\n\x16SendFileChunksResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x1a\n\nCSVRequest\x12\x0c\n\x04\x66ile\x18\x01 \x01(\x0c\"Z\n\x13\x43oordinatesResponse\x12\x30\n\x0b\x63oordinates\x18\x01 \x03(\x0b\x32\x1b.server_services.Coordinate\x12\x11\n\tvalid_xml\x18\x02 \x01(\x08\"1\n\nCoordinate\x12\x11\n\tlongitude\x18\x01 \x01(\t\x12\x10\n\x08latitude\x18\x02 \x01(\t\"!\n\x0e\x43ountryRequest\x12\x0f\n\x07\x63ountry\x18\x01 \x01(\t\" \n\x0eStatesResponse\x12\x0e\n\x06states\x18\x01 \x03(\t2\xcf\x01\n\x0fSendFileService\x12W\n\x08SendFile\x12$.server_services.SendFileRequestBody\x1a%.server_services.SendFileResponseBody\x12\x63\n\x0eSendFileChunks\x12&.server_services.SendFileChunksRequest\x1a\'.server_services.SendFileChunksResponse(\x01\x32\xb6\x01\n\x0b\x46ileService\x12O\n\nProcessCSV\x12\x1b.server_services.CSVRequest\x1a$.server_services.CoordinatesResponse\x12V\n\x12GetStatesByCountry\x12\x1f.server_services.CountryRequest\x1a\x1f.server_services.StatesResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -39,6 +39,18 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_SENDFILECHUNKSREQUEST']._serialized_end=214
   _globals['_SENDFILECHUNKSRESPONSE']._serialized_start=216
   _globals['_SENDFILECHUNKSRESPONSE']._serialized_end=274
-  _globals['_SENDFILESERVICE']._serialized_start=277
-  _globals['_SENDFILESERVICE']._serialized_end=484
+  _globals['_CSVREQUEST']._serialized_start=276
+  _globals['_CSVREQUEST']._serialized_end=302
+  _globals['_COORDINATESRESPONSE']._serialized_start=304
+  _globals['_COORDINATESRESPONSE']._serialized_end=394
+  _globals['_COORDINATE']._serialized_start=396
+  _globals['_COORDINATE']._serialized_end=445
+  _globals['_COUNTRYREQUEST']._serialized_start=447
+  _globals['_COUNTRYREQUEST']._serialized_end=480
+  _globals['_STATESRESPONSE']._serialized_start=482
+  _globals['_STATESRESPONSE']._serialized_end=514
+  _globals['_SENDFILESERVICE']._serialized_start=517
+  _globals['_SENDFILESERVICE']._serialized_end=724
+  _globals['_FILESERVICE']._serialized_start=727
+  _globals['_FILESERVICE']._serialized_end=909
 # @@protoc_insertion_point(module_scope)
