@@ -119,7 +119,6 @@ def serve():
     logger.info("Starting GRPC server...")
     server.start()
     logger.info(f"GRPC server is running ")
-
     server.wait_for_termination()
 
 if __name__ == '__main__':
