@@ -1,15 +1,13 @@
-from rest_api_server.settings import GRPC_PORT, GRPC_HOST
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from ..serializers.file_serializer import FileUploadSerializer
-import grpc
-import api.grpc.server_services_pb2 as server_services_pb2
-import api.grpc.server_services_pb2_grpc as server_services_pb2_grpc
 import os
-
-from api.grpc import server_services_pb2 as server_services_pb2
-from api.grpc import server_services_pb2_grpc as server_services_pb2_grpc
+#Adicionado
+import grpc
+import api.grpc.server_services_pb2 as server_services_pb2 
+import api.grpc.server_services_pb2_grpc as server_services_pb2_grpc
+from rest_api_server.settings import GRPC_PORT, GRPC_HOST
 
 
 class FileUploadView(APIView):

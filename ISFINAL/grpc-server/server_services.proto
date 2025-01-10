@@ -12,6 +12,17 @@ service SendFileService {
 service FileService {
   rpc ProcessCSV (CSVRequest) returns (CoordinatesResponse);
   rpc GetStatesByCountry (CountryRequest) returns (StatesResponse);
+  rpc ConvertCSVToXML(ConvertCSVToXMLRequest) returns (ConvertCSVToXMLResponse);
+}
+
+message ConvertCSVToXMLRequest {
+    string file_name = 1;
+    bytes file_content = 2;
+}
+
+message ConvertCSVToXMLResponse {
+    bool success = 1;
+    string xml_file_path = 2;
 }
 
 // Mensagens para envio de arquivos

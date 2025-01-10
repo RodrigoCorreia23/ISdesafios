@@ -2,30 +2,71 @@ syntax = "proto3";
 
 package server_services;
 
-// Request message
-message SendFileRequestBody {
-  bytes file = 1; // DTD file as bytes
-  string file_mime = 2;
-  string file_name = 3;
-}
-
-// Response message
-message SendFileResponseBody {
-  bool success = 1;
-}
-
-message SendFileChunksRequest {
-  bytes data = 1; // The chunk of the file
-  string file_name = 2; // File name (optional, sent in the first chunk or metadata)
-}
-
-message SendFileChunksResponse {
-  bool success = 1; // Indicates if the upload was successful
-  string message = 2; // Additional status message
-}
-
-// Service definition
+// Serviço SendFileService para envio de arquivos
 service SendFileService {
   rpc SendFile (SendFileRequestBody) returns (SendFileResponseBody);
   rpc SendFileChunks (stream SendFileChunksRequest) returns (SendFileChunksResponse);
+}
+
+// Serviço FileService para processamento de CSV, validação de XML e consulta de estados
+service FileService {
+  rpc ProcessCSV (CSVRequest) returns (CoordinatesResponse);
+  rpc GetStatesByCountry (CountryRequest) returns (StatesResponse);
+  rpc ConvertCSVToXML(ConvertCSVToXMLRequest) returns (ConvertCSVToXMLResponse);
+}
+
+message ConvertCSVToXMLRequest {
+    string file_name = 1;
+    bytes file_content = 2;
+}
+
+message ConvertCSVToXMLResponse {
+    bool success = 1;
+    string xml_file_path = 2;
+}
+
+// Mensagens para envio de arquivos
+message SendFileRequestBody {
+  bytes file = 1; // Arquivo enviado como bytes
+  string file_mime = 2; // Tipo de arquivo (opcional)
+  string file_name = 3; // Nome do arquivo (opcional)
+}
+
+message SendFileResponseBody {
+  bool success = 1; // Indica se o envio foi bem-sucedido
+}
+
+message SendFileChunksRequest {
+  bytes data = 1; // Chunk do arquivo enviado
+  string file_name = 2; // Nome do arquivo (opcional, enviado no primeiro chunk ou como metadado)
+}
+
+message SendFileChunksResponse {
+  bool success = 1; // Indica se o upload foi bem-sucedido
+  string message = 2; // Mensagem adicional sobre o status
+}
+
+// Mensagens para processamento de CSV
+message CSVRequest {
+  bytes file = 1; // CSV enviado como bytes
+}
+
+message CoordinatesResponse {
+  repeated Coordinate coordinates = 1; // Resposta com lista de coordenadas
+  bool valid_xml = 2; // Status de validação do XML
+}
+
+// Estrutura para coordenadas
+message Coordinate {
+  string longitude = 1;
+  string latitude = 2;
+}
+
+// Mensagens para consulta de estados
+message CountryRequest {
+  string country = 1;
+}
+
+message StatesResponse {
+  repeated string states = 1;
 }
