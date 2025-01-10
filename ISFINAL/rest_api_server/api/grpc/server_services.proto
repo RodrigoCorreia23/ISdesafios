@@ -13,6 +13,17 @@ service FileService {
   rpc ProcessCSV (CSVRequest) returns (CoordinatesResponse);
   rpc GetStatesByCountry (CountryRequest) returns (StatesResponse);
   rpc ConvertCSVToXML(ConvertCSVToXMLRequest) returns (ConvertCSVToXMLResponse);
+  rpc ConvertXMLToXSD (ConvertXMLToXSDRequest) returns (ConvertXMLToXSDResponse);
+}
+
+message ConvertXMLToXSDRequest {
+    string file_name = 1;
+    bytes file_content = 2;
+}
+
+message ConvertXMLToXSDResponse {
+    bool success = 1;
+    string xsd_file_path = 2;
 }
 
 message ConvertCSVToXMLRequest {

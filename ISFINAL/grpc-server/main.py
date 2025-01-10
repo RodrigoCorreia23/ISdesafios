@@ -170,6 +170,7 @@ class FileService(server_services_pb2_grpc.FileServiceServicer):
             context.set_details(f"Failed: {e}")
             context.set_code(grpc.StatusCode.INTERNAL)
             return server_services_pb2.StatesResponse(states=[])
+        
     def ConvertCSVToXML(self, request, context):
         try:
             # Caminho para salvar o arquivo CSV recebido
@@ -193,6 +194,28 @@ class FileService(server_services_pb2_grpc.FileServiceServicer):
             context.set_code(grpc.StatusCode.INTERNAL)
             return server_services_pb2.ConvertCSVToXMLResponse(success=False)
 
+    def ConvertXMLToXSD(self, request, context):
+        try:
+            # Caminho para salvar o XML recebido
+            xml_file_path = os.path.join(MEDIA_PATH, request.file_name)
+            with open(xml_file_path, 'wb') as f:
+                f.write(request.file_content)
+
+            # Caminho para o arquivo XSD gerado
+            xsd_file_path = xml_file_path.replace('.xml', '.xsd')
+
+            # Gerar o XSD a partir do XML
+            generate_xsd_from_xml(xml_file_path, xsd_file_path)
+
+            # Retornar o caminho do XSD gerado
+            return server_services_pb2.ConvertXMLToXSDResponse(
+                success=True,
+                xsd_file_path=xsd_file_path
+            )
+        except Exception as e:
+            context.set_details(f"Error: {str(e)}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return server_services_pb2.ConvertXMLToXSDResponse(success=False)
 
 def serve():
     server = grpc.server(
