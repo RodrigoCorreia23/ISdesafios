@@ -178,6 +178,11 @@ class FileServiceStub(object):
                 request_serializer=server__services__pb2.ConvertXMLToDatabaseRequest.SerializeToString,
                 response_deserializer=server__services__pb2.GenericResponse.FromString,
                 _registered_method=True)
+        self.ExportToDatabase = channel.unary_unary(
+                '/server_services.FileService/ExportToDatabase',
+                request_serializer=server__services__pb2.ExportToDatabaseRequest.SerializeToString,
+                response_deserializer=server__services__pb2.ExportToDatabaseResponse.FromString,
+                _registered_method=True)
 
 
 class FileServiceServicer(object):
@@ -214,6 +219,12 @@ class FileServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ExportToDatabase(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_FileServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -241,6 +252,11 @@ def add_FileServiceServicer_to_server(servicer, server):
                     servicer.ConvertXMLToDatabase,
                     request_deserializer=server__services__pb2.ConvertXMLToDatabaseRequest.FromString,
                     response_serializer=server__services__pb2.GenericResponse.SerializeToString,
+            ),
+            'ExportToDatabase': grpc.unary_unary_rpc_method_handler(
+                    servicer.ExportToDatabase,
+                    request_deserializer=server__services__pb2.ExportToDatabaseRequest.FromString,
+                    response_serializer=server__services__pb2.ExportToDatabaseResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -379,6 +395,33 @@ class FileService(object):
             '/server_services.FileService/ConvertXMLToDatabase',
             server__services__pb2.ConvertXMLToDatabaseRequest.SerializeToString,
             server__services__pb2.GenericResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ExportToDatabase(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/server_services.FileService/ExportToDatabase',
+            server__services__pb2.ExportToDatabaseRequest.SerializeToString,
+            server__services__pb2.ExportToDatabaseResponse.FromString,
             options,
             channel_credentials,
             insecure,

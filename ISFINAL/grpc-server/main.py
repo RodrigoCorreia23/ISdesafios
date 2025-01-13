@@ -193,7 +193,70 @@ class FileService(server_services_pb2_grpc.FileServiceServicer):
             context.set_details(f"Error: {str(e)}")
             context.set_code(grpc.StatusCode.INTERNAL)
             return server_services_pb2.ConvertCSVToXMLResponse(success=False)
+        
+    def ExportToDatabase(self, request, context):
+        """
+            Insere os dados de um arquivo XML na tabela PostgreSQL.
+        """
+        try:
+            xml_file_path = os.path.join(MEDIA_PATH, "Sales.xml")
+            # Verificar se o arquivo XML existe
+            if not os.path.exists(xml_file_path):
+                context.set_details(f"Arquivo XML não encontrado: {xml_file_path}")
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                return server_services_pb2.insert_xml_to_databaseResponse(success=False, message=f"Arquivo XML não encontrado: {xml_file_path}")
 
+            tree = ET.parse(xml_file_path)
+            root = tree.getroot()
+            
+            # Conectar ao banco de dados PostgreSQL
+            conn = pg8000.connect(
+                user=DBUSERNAME,
+                password=DBPASSWORD,
+                host=DBHOST,
+                port=DBPORT,
+                database=DBNAME
+            )
+            cursor = conn.cursor()
+
+            # Criar a tabela `cities` se não existir
+            create_table_query = """
+            CREATE TABLE IF NOT EXISTS cities (
+                id SERIAL PRIMARY KEY,
+                country VARCHAR(100),
+                state VARCHAR(100),
+                longitude FLOAT,
+                latitude FLOAT
+            );
+            """
+            cursor.execute(create_table_query)
+            conn.commit()
+            
+            # Inserir os dados na bd
+            
+            for item in root.findall("item"):
+                country = item.findtext("Country")
+                state = item.findtext("State")
+                longitude = float(item.findtext("longitude", "0"))
+                latitude = float(item.findtext("latitude", "0"))
+                    
+                cursor.execute(
+                    "INSERT INTO cities (country, state, longitude, latitude) VALUES (%s, %s, %s, %s)",
+                    (country, state, longitude, latitude)
+                )
+                    
+            conn.commit()
+            cursor.close()
+            conn.close()
+                    
+            return server_services_pb2.ExportToDatabaseResponse(success=True, message= "Data exported Successfully")
+        except Exception as e:
+            context.set_details(f"Error exporting the data: {str(e)}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return server_services_pb2.ExportToDatabaseResponse(success=False, message="Error exporting the data")
+        
+
+        
     def ConvertXMLToXSD(self, request, context):
         try:
             # Caminho para salvar o XML recebido
@@ -235,79 +298,6 @@ class FileService(server_services_pb2_grpc.FileServiceServicer):
             context.set_details(f"Error: {str(e)}")
             context.set_code(grpc.StatusCode.INTERNAL)
             return server_services_pb2.StatesResponse(states=[])
-
-    
-    def insert_xml_to_database(self):
-        """
-            Insere os dados de um arquivo XML na tabela PostgreSQL.
-        """
-        try:
-            xml_file_path = os.path.join(MEDIA_PATH, "Sales.xml")
-            # Verificar se o arquivo XML existe
-            if not os.path.exists(xml_file_path):
-                logger.error(f"Arquivo XML não encontrado: {xml_file_path}")
-                raise FileNotFoundError(f"Arquivo XML não encontrado: {xml_file_path}")
-
-            # Conectar ao banco de dados PostgreSQL
-            conn = pg8000.connect(
-                user=DBUSERNAME,
-                password=DBPASSWORD,
-                host=DBHOST,
-                port=DBPORT,
-                database=DBNAME
-            )
-            cursor = conn.cursor()
-
-            # Criar a tabela `cities` se não existir
-            create_table_query = """
-            CREATE TABLE IF NOT EXISTS cities (
-                id SERIAL PRIMARY KEY,
-                country VARCHAR(100),
-                state VARCHAR(100),
-                longitude FLOAT,
-                latitude FLOAT
-            );
-            """
-            cursor.execute(create_table_query)
-            conn.commit()
-
-            # Parsear o arquivo XML
-            tree = ET.parse(xml_file_path)
-            root = tree.getroot()
-
-            # Query para inserir os dados na tabela
-            insert_query = """
-            INSERT INTO cities (country, state, longitude, latitude)
-            VALUES (%s, %s, %s, %s)
-            """
-
-            # Iterar pelos itens no XML e inserir no banco de dados
-            for item in root.findall("item"):
-                try:
-                    data = (
-                        item.find("Country").text,
-                        item.find("State").text,
-                        float(item.find("longitude").text) if item.find("longitude") is not None else None,
-                        float(item.find("latitude").text) if item.find("latitude") is not None else None,
-                    )
-                    cursor.execute(insert_query, data)
-                except Exception as e:
-                    logger.error(f"Erro ao inserir item no banco de dados: {e}", exc_info=True)
-
-            conn.commit()
-            logger.info("Dados inseridos no banco de dados com sucesso.")
-        except Exception as e:
-            logger.error(f"Erro ao inserir dados no banco de dados: {e}", exc_info=True)
-            raise
-        finally:
-            # Fechar a conexão
-            if 'cursor' in locals():
-                cursor.close()
-            if 'conn' in locals():
-                conn.close()
-
-
-
 
 def serve():
     server = grpc.server(

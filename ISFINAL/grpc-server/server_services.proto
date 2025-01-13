@@ -15,6 +15,7 @@ service FileService {
   rpc ConvertCSVToXML (ConvertCSVToXMLRequest) returns (ConvertCSVToXMLResponse);
   rpc ConvertXMLToXSD (ConvertXMLToXSDRequest) returns (ConvertXMLToXSDResponse);
   rpc ConvertXMLToDatabase (ConvertXMLToDatabaseRequest) returns (GenericResponse);
+  rpc ExportToDatabase (ExportToDatabaseRequest) returns (ExportToDatabaseResponse);
 }
 
 // Mensagens para conversão de XML para XSD
@@ -97,4 +98,13 @@ message ConvertXMLToDatabaseRequest {
 message GenericResponse {
     bool success = 1;
     string message = 2;
+}
+
+message ExportToDatabaseRequest {
+  string file_name = 1;
+}
+
+message ExportToDatabaseResponse {
+  bool success = 1;
+  string message = 2;
 }

@@ -1,38 +1,43 @@
-from django.http import JsonResponse
-from django.views import View
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 import grpc
-from api.grpc import server_services_pb2, server_services_pb2_grpc
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
+from api.grpc.server_services_pb2_grpc import FileServiceStub
+from api.grpc.server_services_pb2 import ExportToDatabaseRequest
+from rest_api_server.settings import GRPC_HOST, GRPC_PORT
 
-@method_decorator(csrf_exempt, name='dispatch')
-class ImportXMLToDatabaseView(View):
-    """
-    Classe para importar dados de um arquivo XML para o banco de dados usando gRPC.
-    """
-    
-    def post(self, request, *args, **kwargs):
-        try:
-            # Verificar se o arquivo foi enviado
-            xml_file = request.FILES.get('file')
-            if not xml_file:
-                return JsonResponse({"success": False, "message": "Nenhum arquivo enviado."}, status=400)
+@api_view(['POST'])
+def export_xml_to_db(request):
+    try:
+        # Receber os parâmetros
+        file_name = request.data.get('file_name')
 
-            # Estabelecer conexão com o servidor gRPC
-            channel = grpc.insecure_channel("grpc-server:50051")
-            stub = server_services_pb2_grpc.FileServiceStub(channel)
-
-            # Enviar o arquivo para o servidor gRPC
-            response = stub.ConvertXMLToDatabase(
-                server_services_pb2.ConvertXMLToDatabaseRequest(
-                    file_name=xml_file.name,
-                    file_content=xml_file.read()
-                )
+        # Validar o parâmetro
+        if not file_name:
+            return Response(
+                {"error": "file_name is required"},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-            # Retornar a resposta do servidor gRPC
-            return JsonResponse({"success": response.success, "message": response.message})
-        
-        except Exception as e:
-            # Captura e trata erros durante o processamento
-            return JsonResponse({"success": False, "message": f"Erro ao processar: {str(e)}"}, status=500)
+        # Conectar ao servidor gRPC
+        channel = grpc.insecure_channel(f"{GRPC_HOST}:{GRPC_PORT}")
+        stub = FileServiceStub(channel) 
+        grpc_request = ExportToDatabaseRequest(file_name=file_name)
+        grpc_response = stub.ExportToDatabase(grpc_request)
+
+        if grpc_response.success:
+            return Response({
+                "message": grpc_response.message
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "error": grpc_response.message
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except grpc.RpcError as e:
+        return Response(
+            {"error": f"Error on gRPC server: {e.details()}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
