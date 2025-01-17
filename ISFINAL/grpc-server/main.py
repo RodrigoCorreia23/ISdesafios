@@ -40,55 +40,10 @@ LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 logger = logging.getLogger("FileService")
 
-# SendFileService implementation
-class SendFileService(server_services_pb2_grpc.SendFileServiceServicer):
-    def SendFile(self, request, context):
-        try:
-            os.makedirs(MEDIA_PATH, exist_ok=True)
-            file_path = os.path.join(MEDIA_PATH, request.file_name)
-            with open(file_path, 'wb') as f:
-                f.write(request.file)
-            
-            # Establish connection to PostgreSQL
-            conn = pg8000.connect(
-                user=DBUSERNAME, 
-                password=DBPASSWORD, 
-                host=DBHOST, 
-                port=DBPORT, 
-                database=DBNAME
-            )
-            cursor = conn.cursor()
-            create_table_query = """
-            CREATE TABLE IF NOT EXISTS users (
-                Date DATE,
-                Day INT,
-                Month VARCHAR(50),
-                Year INT,
-                Customer_Age INT,
-                Age_Group VARCHAR(50),
-                Customer_Gender CHAR(1),
-                Country VARCHAR(100),
-                State VARCHAR(100),
-                Product_Category VARCHAR(100),
-                Sub_Category VARCHAR(100),
-                Product VARCHAR(100),
-                Order_Quantity INT,
-                Unit_Cost DECIMAL(10, 2),
-                Unit_Price DECIMAL(10, 2),
-                Profit DECIMAL(10, 2),
-                Cost DECIMAL(10, 2),
-                Revenue DECIMAL(10, 2)
-            );
-            """
-            cursor.execute(create_table_query)
-            conn.commit()
-            return server_services_pb2.SendFileResponseBody(success=True)
-        except Exception as e:
-            logger.error(f"Error: {str(e)}", exc_info=True)
-            context.set_details(f"Failed: {str(e)}")
-            context.set_code(grpc.StatusCode.INTERNAL)
-            return server_services_pb2.SendFileResponseBody(success=False)
 
+# FileService implementation
+class FileService(server_services_pb2_grpc.FileServiceServicer):
+    
     def SendFileChunks(self, request_iterator, context):
         try:
             rabbit_connection = pika.BlockingConnection(pika.ConnectionParameters(
@@ -115,9 +70,7 @@ class SendFileService(server_services_pb2_grpc.SendFileServiceServicer):
         except Exception as e:
             logger.error(f"Error: {str(e)}", exc_info=True)
             return server_services_pb2.SendFileChunksResponse(success=False, message=str(e))
-
-# FileService implementation
-class FileService(server_services_pb2_grpc.FileServiceServicer):
+    
     def ProcessCSV(self, request, context):
         try:
             csv_file_path = os.path.join(MEDIA_PATH, "received.csv")
@@ -336,7 +289,6 @@ def serve():
             ('grpc.max_send_message_length', 50 * 1024 * 1024),
         ]
     )
-    server_services_pb2_grpc.add_SendFileServiceServicer_to_server(SendFileService(), server)
     server_services_pb2_grpc.add_FileServiceServicer_to_server(FileService(), server)
     server.add_insecure_port(f'[::]:{GRPC_SERVER_PORT}')
     logger.info("Starting GRPC server...")

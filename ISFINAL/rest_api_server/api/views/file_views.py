@@ -25,7 +25,7 @@ class FileUploadView(APIView):
             
             # Connect to the gRPC service
             channel = grpc.insecure_channel(f'{GRPC_HOST}:{GRPC_PORT}')
-            stub = server_services_pb2_grpc.SendFileServiceStub(channel)
+            stub = server_services_pb2_grpc.FileServiceStub(channel)
             
             # Prepare gRPC request
             request = server_services_pb2.SendFileRequestBody(
@@ -56,7 +56,8 @@ class FileUploadChunksView(APIView):
             
             # Connect to the gRPC service
             channel = grpc.insecure_channel(f'{GRPC_HOST}:{GRPC_PORT}')
-            stub = server_services_pb2_grpc.SendFileServiceStub(channel)
+            stub = server_services_pb2_grpc.FileServiceStub(channel)
+
             
             def generate_file_chunks(file, file_name, chunk_size=(64 * 1024)):
                 try:

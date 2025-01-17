@@ -2,14 +2,11 @@ syntax = "proto3";
 
 package server_services;
 
-// Serviço SendFileService para envio de arquivos
-service SendFileService {
-  rpc SendFile (SendFileRequestBody) returns (SendFileResponseBody);
-  rpc SendFileChunks (stream SendFileChunksRequest) returns (SendFileChunksResponse);
-}
+
 
 // Serviço FileService para processamento de CSV, validação de XML e consulta de estados
 service FileService {
+  rpc SendFileChunks (stream SendFileChunksRequest) returns (SendFileChunksResponse);
   rpc ProcessCSV (CSVRequest) returns (CoordinatesResponse);
   rpc GetStatesByCountry (CountryRequest) returns (StatesResponse);
   rpc ConvertCSVToXML (ConvertCSVToXMLRequest) returns (ConvertCSVToXMLResponse);
