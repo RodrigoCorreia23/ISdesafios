@@ -6,9 +6,15 @@ import logging
 import pg8000
 import pika
 from file_processor import csv_to_xml_with_coordinates, validate_xml, find_coordinates, generate_xsd_from_xml, get_states_by_country
+
+class SalesItem:
+    def __init__(self, country, longitude, latitude):
+        self.country = country
+        self.longitude = longitude
+        self.latitude = latitude
 from server_services_pb2_grpc import FileServiceServicer
 import server_services_pb2
-from server_services_pb2 import ConvertCSVToXMLResponse
+from server_services_pb2 import ConvertCSVToXMLResponse, CountryResponse
 import xml.etree.ElementTree as ET
 
 # Import environment variables
@@ -155,7 +161,7 @@ class FileService(server_services_pb2_grpc.FileServiceServicer):
     def GetStatesByCountry(self, request, context):
         try:
             country_name = request.country
-            xml_file_path = os.path.join(MEDIA_PATH, "output.xml")
+            xml_file_path = os.path.join(MEDIA_PATH, "Sales.xml")
             if not os.path.exists(xml_file_path):
                 context.set_details(f"XML file not found: {xml_file_path}")
                 context.set_code(grpc.StatusCode.NOT_FOUND)
@@ -298,6 +304,29 @@ class FileService(server_services_pb2_grpc.FileServiceServicer):
             context.set_details(f"Error: {str(e)}")
             context.set_code(grpc.StatusCode.INTERNAL)
             return server_services_pb2.StatesResponse(states=[])
+        
+    def GetCountryLocations(self, request, context):
+        # Carregar o XML
+        tree = ET.parse('/app/media/Sales.xml') 
+        root = tree.getroot()
+
+        # Filtrar os dados do XML
+        sales_items = []
+        for item in root.findall('item'):
+            country = item.find('Country').text
+            if request.country and country != request.country:
+                continue
+
+            sales_items.append(SalesItem(
+                country=country,
+                longitude=float(item.find('longitude').text),
+                latitude=float(item.find('latitude').text)
+            ))
+
+        # Retornar a resposta
+        response = server_services_pb2.CountryResponse()
+        response.sales_items.extend(sales_items)
+        return response
 
 def serve():
     server = grpc.server(

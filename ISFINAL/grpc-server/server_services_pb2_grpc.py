@@ -183,6 +183,11 @@ class FileServiceStub(object):
                 request_serializer=server__services__pb2.ExportToDatabaseRequest.SerializeToString,
                 response_deserializer=server__services__pb2.ExportToDatabaseResponse.FromString,
                 _registered_method=True)
+        self.GetCountryLocations = channel.unary_unary(
+                '/server_services.FileService/GetCountryLocations',
+                request_serializer=server__services__pb2.CountryRequest.SerializeToString,
+                response_deserializer=server__services__pb2.CountryResponse.FromString,
+                _registered_method=True)
 
 
 class FileServiceServicer(object):
@@ -225,6 +230,12 @@ class FileServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetCountryLocations(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_FileServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -257,6 +268,11 @@ def add_FileServiceServicer_to_server(servicer, server):
                     servicer.ExportToDatabase,
                     request_deserializer=server__services__pb2.ExportToDatabaseRequest.FromString,
                     response_serializer=server__services__pb2.ExportToDatabaseResponse.SerializeToString,
+            ),
+            'GetCountryLocations': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetCountryLocations,
+                    request_deserializer=server__services__pb2.CountryRequest.FromString,
+                    response_serializer=server__services__pb2.CountryResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -422,6 +438,33 @@ class FileService(object):
             '/server_services.FileService/ExportToDatabase',
             server__services__pb2.ExportToDatabaseRequest.SerializeToString,
             server__services__pb2.ExportToDatabaseResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetCountryLocations(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/server_services.FileService/GetCountryLocations',
+            server__services__pb2.CountryRequest.SerializeToString,
+            server__services__pb2.CountryResponse.FromString,
             options,
             channel_credentials,
             insecure,

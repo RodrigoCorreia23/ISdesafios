@@ -8,6 +8,3 @@ class GetAllUsers(APIView):
             cursor.execute("SELECT * FROM users")
             result = cursor.fetchall()
 
-# Convert the result to a list of Book instances if necessary
-        users = [Book(id=row[0], name=row[1]) for row in result]
-        return Response({"users": users}, status=status.HTTP_200_OK)

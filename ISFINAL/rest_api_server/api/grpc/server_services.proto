@@ -16,6 +16,7 @@ service FileService {
   rpc ConvertXMLToXSD (ConvertXMLToXSDRequest) returns (ConvertXMLToXSDResponse);
   rpc ConvertXMLToDatabase (ConvertXMLToDatabaseRequest) returns (GenericResponse);
   rpc ExportToDatabase (ExportToDatabaseRequest) returns (ExportToDatabaseResponse);
+  rpc GetCountryLocations (CountryRequest) returns (CountryResponse);
 }
 
 // Mensagens para conversão de XML para XSD
@@ -82,6 +83,10 @@ message CountryRequest {
   string country = 1;
 }
 
+message CountryResponse {
+    repeated SalesItem sales_items = 1; // Lista de itens encontrados
+}
+
 message StatesResponse {
   repeated string states = 1;
 }
@@ -107,4 +112,10 @@ message ExportToDatabaseRequest {
 message ExportToDatabaseResponse {
   bool success = 1;
   string message = 2;
+}
+
+message SalesItem {
+    string country = 1;
+    float longitude = 2;
+    float latitude = 3;
 }

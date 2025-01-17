@@ -5,3 +5,5 @@ pika
 geopy
 lxml
 pandas
+graphene
+graphene-django
