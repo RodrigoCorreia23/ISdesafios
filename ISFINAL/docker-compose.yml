@@ -1,3 +1,4 @@
+version: "3.8"
 services: 
   grpc-server: 
     build: ./grpc-server 
@@ -22,25 +23,29 @@ services:
       - RABBITMQ_PW=password
     depends_on: 
       - db 
+    networks:
+      - app_network
   
   rest-api-server:
-      build: ./rest_api_server 
-      container_name: rest_api_server 
-      ports: 
-          - "8000:8000"
-      volumes: 
-          - ./data/media:/app/media 
-      environment: 
-          - GRPC_PORT=50051 
-          - GRPC_HOST=grpc-server 
-          - DBNAME=mydatabase 
-          - DBUSERNAME=myuser 
-          - DBPASSWORD=mypassword 
-          - DBHOST=db 
-          - DBPORT=5432
-      depends_on:
-          - grpc-server
-          - db
+    build: ./rest_api_server 
+    container_name: rest_api_server 
+    ports: 
+      - "8000:8000"
+    volumes: 
+      - ./data/media:/app/media 
+    environment: 
+      - GRPC_PORT=50051 
+      - GRPC_HOST=grpc-server 
+      - DBNAME=mydatabase 
+      - DBUSERNAME=myuser 
+      - DBPASSWORD=mypassword 
+      - DBHOST=db 
+      - DBPORT=5432
+    depends_on:
+      - grpc-server
+      - db
+    networks:
+      - app_network
   
   rabbitmq:
     image: rabbitmq:3-management
@@ -50,6 +55,10 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - app_network
   
 
   db:
@@ -63,9 +72,11 @@ services:
       - "5438:5432" 
     volumes: 
       - pgdata:/var/lib/postgresql/data  
+    networks:
+      - app_network
 
   worker:
-    build : ./worker-rabbit-csv
+    build: ./worker-rabbit-csv
     ports:
       - "8003:8003"
     depends_on:
@@ -82,6 +93,9 @@ services:
       - DBPASSWORD=mypassword
       - DBHOST=db
       - DBPORT=5432
+    restart: on-failure
+    networks:
+      - app_network
     
   graphql-server:
     build: ./graphql-server
@@ -98,6 +112,14 @@ services:
       - DBPORT=5432
     depends_on:
       - db
+    networks:
+      - app_network
+
 volumes: 
   grpc-server: 
   pgdata:
+  rabbitmq-data:
+
+networks:
+  app_network:
+    driver: bridge

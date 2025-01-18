@@ -6,7 +6,7 @@ from io import StringIO
 import pandas as pd
 import pg8000
 
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "isfinal-rabbitmq-1")
 RABBITMQ_PORT = os.getenv("RABBITMQ_PORT", "5672")
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "user")
 RABBITMQ_PW = os.getenv("RABBITMQ_PW", "password")
