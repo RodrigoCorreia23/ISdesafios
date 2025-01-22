@@ -5,7 +5,9 @@ import grpc
 import logging
 import pg8000
 import pika
-from file_processor import csv_to_xml_with_coordinates, validate_xml, find_coordinates, generate_xsd_from_xml, get_states_by_country
+from file_processor import csv_to_xml_with_coordinates, validate_xml, find_coordinates, generate_xsd_from_xml, \
+    get_states_by_country, get_info_by_cardinalpoint
+
 
 class SalesItem:
     def __init__(self, country, longitude, latitude):
@@ -129,7 +131,45 @@ class FileService(server_services_pb2_grpc.FileServiceServicer):
             context.set_details(f"Failed: {e}")
             context.set_code(grpc.StatusCode.INTERNAL)
             return server_services_pb2.StatesResponse(states=[])
-        
+
+    def GetInfoByCardinalPoint(self, request, context):
+        try:
+            _warehouse = request.warehouse
+            xml_file_path = os.path.join(MEDIA_PATH, "MotorcycleSalesAnalysis.xml")
+
+            # Verificar se o arquivo XML existe
+            if not os.path.exists(xml_file_path):
+                context.set_details(f"XML file not found: {xml_file_path}")
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                return server_services_pb2.CardinalPointResponse()
+
+            # Obter os dados filtrados pelo ponto cardeal
+            cardinalpoints_data = get_info_by_cardinalpoint(xml_file_path, _warehouse)
+
+            # Criar a resposta no formato esperado
+            response = server_services_pb2.CardinalPointResponse()
+
+            for point in cardinalpoints_data:
+                entry = response.data.add()
+                entry.date = point.get("date", "")
+                entry.warehouse = point.get("warehouse", "")
+                entry.client_type = point.get("client_type", "")
+                entry.product_line = point.get("product_line", "")
+                entry.quantity = point.get("quantity", 0)
+                entry.unit_price = point.get("unit_price", 0.0)
+                entry.total = point.get("total", 0.0)
+                entry.payment = point.get("payment", "")
+                entry.latitude = point.get("latitude", 0.0)
+                entry.longitude = point.get("longitude", 0.0)
+
+            return response
+
+        except Exception as e:
+            logger.error(f"Error in GetInfoByCardinalPoint: {e}", exc_info=True)
+            context.set_details(f"Failed: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return server_services_pb2.CardinalPointResponse()
+
     def ConvertCSVToXML(self, request, context):
         try:
             # Caminho para salvar o arquivo CSV recebido
@@ -152,70 +192,152 @@ class FileService(server_services_pb2_grpc.FileServiceServicer):
             context.set_details(f"Error: {str(e)}")
             context.set_code(grpc.StatusCode.INTERNAL)
             return server_services_pb2.ConvertCSVToXMLResponse(success=False)
-        
+
     def ExportToDatabase(self, request, context):
-        """
-            Insere os dados de um arquivo XML na tabela PostgreSQL.
-        """
         try:
-            xml_file_path = os.path.join(MEDIA_PATH, "Sales.xml")
+            xml_file_path = os.path.join(MEDIA_PATH, request.file_name)
+
             # Verificar se o arquivo XML existe
             if not os.path.exists(xml_file_path):
                 context.set_details(f"Arquivo XML não encontrado: {xml_file_path}")
                 context.set_code(grpc.StatusCode.NOT_FOUND)
-                return server_services_pb2.insert_xml_to_databaseResponse(success=False, message=f"Arquivo XML não encontrado: {xml_file_path}")
-
-            tree = ET.parse(xml_file_path)
-            root = tree.getroot()
-            
-            # Conectar ao banco de dados PostgreSQL
-            conn = pg8000.connect(
-                user=DBUSERNAME,
-                password=DBPASSWORD,
-                host=DBHOST,
-                port=DBPORT,
-                database=DBNAME
-            )
-            cursor = conn.cursor()
-
-            # Criar a tabela `cities` se não existir
-            create_table_query = """
-            CREATE TABLE IF NOT EXISTS cities (
-                id SERIAL PRIMARY KEY,
-                country VARCHAR(100),
-                state VARCHAR(100),
-                longitude FLOAT,
-                latitude FLOAT
-            );
-            """
-            cursor.execute(create_table_query)
-            conn.commit()
-            
-            # Inserir os dados na bd
-            
-            for item in root.findall("item"):
-                country = item.findtext("Country")
-                state = item.findtext("State")
-                longitude = float(item.findtext("longitude", "0"))
-                latitude = float(item.findtext("latitude", "0"))
-                    
-                cursor.execute(
-                    "INSERT INTO cities (country, state, longitude, latitude) VALUES (%s, %s, %s, %s)",
-                    (country, state, longitude, latitude)
+                return server_services_pb2.ExportToDatabaseResponse(
+                    success=False,
+                    message=f"Arquivo XML não encontrado: {xml_file_path}"
                 )
-                    
-            conn.commit()
-            cursor.close()
-            conn.close()
-                    
-            return server_services_pb2.ExportToDatabaseResponse(success=True, message= "Data exported Successfully")
+
+            # Processar o arquivo Sales.xml
+            if request.file_name == "Sales.xml":
+                tree = ET.parse(xml_file_path)
+                root = tree.getroot()
+
+                # Conectar ao banco de dados PostgreSQL
+                conn = pg8000.connect(
+                    user=DBUSERNAME,
+                    password=DBPASSWORD,
+                    host=DBHOST,
+                    port=DBPORT,
+                    database=DBNAME
+                )
+                cursor = conn.cursor()
+
+                # Criar tabela se não existir
+                create_table_query = """
+                CREATE TABLE IF NOT EXISTS cities (
+                    id SERIAL PRIMARY KEY,
+                    country VARCHAR(100),
+                    state VARCHAR(100),
+                    longitude FLOAT,
+                    latitude FLOAT
+                );
+                """
+                cursor.execute(create_table_query)
+                conn.commit()
+
+                # Inserir os dados no banco de dados
+                for item in root.findall("item"):
+                    country = item.findtext("Country")
+                    state = item.findtext("State")
+                    longitude = float(item.findtext("longitude", "0"))
+                    latitude = float(item.findtext("latitude", "0"))
+
+                    cursor.execute(
+                        "INSERT INTO cities (country, state, longitude, latitude) VALUES (%s, %s, %s, %s)",
+                        (country, state, longitude, latitude)
+                    )
+
+                conn.commit()
+                cursor.close()
+                conn.close()
+
+                return server_services_pb2.ExportToDatabaseResponse(
+                    success=True,
+                    message="Data exported successfully from Sales.xml"
+                )
+
+            # Processar o arquivo MotorcycleSalesAnalysis.xml
+            elif request.file_name == "MotorcycleSalesAnalysis.xml":
+                tree = ET.parse(xml_file_path)
+                root = tree.getroot()
+
+                # Conectar ao banco de dados PostgreSQL
+                conn = pg8000.connect(
+                    user=DBUSERNAME,
+                    password=DBPASSWORD,
+                    host=DBHOST,
+                    port=DBPORT,
+                    database=DBNAME
+                )
+                cursor = conn.cursor()
+
+                # Criar tabela se não existir
+                create_table_query = """
+                CREATE TABLE IF NOT EXISTS motorcycle_sales (
+                    id SERIAL PRIMARY KEY,
+                    date DATE,
+                    warehouse VARCHAR(100),
+                    client_type VARCHAR(100),
+                    product_line VARCHAR(100),
+                    quantity INT,
+                    unit_price FLOAT,
+                    total FLOAT,
+                    payment VARCHAR(50),
+                    latitude FLOAT,
+                    longitude FLOAT
+                );
+                """
+                cursor.execute(create_table_query)
+                conn.commit()
+
+                # Inserir os dados no banco de dados
+                for item in root.findall("item"):
+                    date = item.findtext("date")
+                    warehouse = item.findtext("warehouse")
+                    client_type = item.findtext("client_type")
+                    product_line = item.findtext("product_line")
+                    quantity = int(item.findtext("quantity", "0"))
+                    unit_price = float(item.findtext("unit_price", "0"))
+                    total = float(item.findtext("total", "0"))
+                    payment = item.findtext("payment")
+                    latitude = float(item.findtext("latitude", "0"))
+                    longitude = float(item.findtext("longitude", "0"))
+
+                    cursor.execute(
+                        """
+                        INSERT INTO motorcycle_sales 
+                        (date, warehouse, client_type, product_line, quantity, unit_price, total, payment, latitude, longitude)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (date, warehouse, client_type, product_line, quantity, unit_price, total, payment, latitude,
+                         longitude)
+                    )
+
+                conn.commit()
+                cursor.close()
+                conn.close()
+
+                return server_services_pb2.ExportToDatabaseResponse(
+                    success=True,
+                    message="Data exported successfully from MotorcycleSalesAnalysis.xml"
+                )
+
+            else:
+                # Caso o arquivo não seja reconhecido
+                context.set_details("Unsupported file provided for ExportToDatabase.")
+                context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+                return server_services_pb2.ExportToDatabaseResponse(
+                    success=False,
+                    message="Unsupported file type. Only Sales.xml and MotorcycleSalesAnalysis.xml are supported."
+                )
         except Exception as e:
+            logger.error(f"Error in ExportToDatabase: {e}", exc_info=True)
             context.set_details(f"Error exporting the data: {str(e)}")
             context.set_code(grpc.StatusCode.INTERNAL)
-            return server_services_pb2.ExportToDatabaseResponse(success=False, message="Error exporting the data")
-        
+            return server_services_pb2.ExportToDatabaseResponse(
+                success=False,
+                message="Error exporting the data."
+            )
 
-        
     def ConvertXMLToXSD(self, request, context):
         try:
             # Caminho para salvar o XML recebido

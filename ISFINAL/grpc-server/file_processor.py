@@ -6,95 +6,121 @@ import pandas as pd
 import time
 import logging
 import os
+import random
 
 # Configurar o logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 def csv_to_xml_with_coordinates(csv_file_path, xml_output_path):
-    """
-    Converte um arquivo CSV em XML e adiciona longitude e latitude com base em País e Estado.
-    """
     if os.path.exists(xml_output_path):
-        logger.info(f"O arquivo XML já existe: {xml_output_path}. Pulando a geração do XML.")
-        return  # Retorna diretamente se o arquivo já existe
-    
-    logger.info(f"Iniciando conversão de CSV para XML. Arquivo CSV: {csv_file_path}")
+        logger.info(f"XML file already exists: {xml_output_path}.")
+        return
+
+    logger.info(f"Starting CSV to XML conversion. CSV file: {csv_file_path}")
     geolocator = Nominatim(user_agent="my_app/1.0")
 
-    # Criar o arquivo XML e escrever a tag raiz
+    def process_row_with_country_state(row, geolocator, item):
+        country = row.get("Country")
+        state = row.get("State")
+
+        if country and state:
+            try:
+                location = geolocator.geocode(f"{state}, {country}", timeout=10)
+                if location:
+                    ET.SubElement(item, "longitude").text = str(location.longitude)
+                    ET.SubElement(item, "latitude").text = str(location.latitude)
+                    logger.info(f"Coordinates added: {state}, {country} -> "
+                                f"({location.latitude}, {location.longitude})")
+                else:
+                    logger.warning(f"Coordinates not found for {state}, {country}")
+            except Exception as e:
+                logger.error(f"Error searching for coordinates for {state}, {country}: {e}")
+            finally:
+                time.sleep(1)
+
+    def process_row_with_warehouse(row, item):
+        regions_usa = {
+            "North": {"latitude_range": (40.0, 49.0), "longitude_range": (-125.0, -75.0)},
+            "South": {"latitude_range": (24.0, 33.0), "longitude_range": (-125.0, -75.0)},
+            "East": {"latitude_range": (24.0, 49.0), "longitude_range": (-75.0, -66.0)},
+            "West": {"latitude_range": (24.0, 49.0), "longitude_range": (-125.0, -100.0)},
+            "Central": {"latitude_range": (33.0, 40.0), "longitude_range": (-100.0, -85.0)},
+        }
+
+        warehouse_location = row.get("warehouse")
+        if warehouse_location:
+            region = regions_usa.get(warehouse_location)
+            if region:
+                latitude = round(random.uniform(*region["latitude_range"]), 6)
+                longitude = round(random.uniform(*region["longitude_range"]), 6)
+                logger.info(f"Coordinates generated for '{warehouse_location}': ({latitude}, {longitude})")
+            else:
+                logger.warning(f"Region '{warehouse_location}' not recognized. Default values will be assigned.")
+                latitude, longitude = 0.0, 0.0
+            ET.SubElement(item, "latitude").text = str(latitude)
+            ET.SubElement(item, "longitude").text = str(longitude)
+
+    def create_item_from_row(row):
+        item = ET.Element("item")
+        for key, value in row.items():
+            child = ET.SubElement(item, key)
+            child.text = value or ""
+        return item
+
     with open(xml_output_path, "wb") as xml_file:
         xml_file.write(b'<?xml version="1.0" encoding="UTF-8"?>\n<root>\n')
 
         with open(csv_file_path, 'r', encoding='utf-8') as csv_file:
             reader = csv.DictReader(csv_file)
-            logger.info(f"Colunas encontradas no CSV: {reader.fieldnames}")
+            fieldnames = reader.fieldnames
+
+            if not fieldnames:
+                logger.warning("CSV is empty or has no headers. No action will be taken.")
+                return
+
+            logger.info(f"Columns found in CSV: {fieldnames}")
 
             for row in reader:
-                item = ET.Element("item")
-                for key, value in row.items():
-                    child = ET.SubElement(item, key)
-                    child.text = value or ""
+                item = create_item_from_row(row)
 
-                # Buscar coordenadas com base em "Country" e "State"
-                country = row.get("Country")
-                state = row.get("State")
-                if country and state:
-                    try:
-                        location = geolocator.geocode(f"{state}, {country}", timeout=10)
-                        if location:
-                            ET.SubElement(item, "longitude").text = str(location.longitude)
-                            ET.SubElement(item, "latitude").text = str(location.latitude)
-                            logger.info(f"Coordenadas adicionadas: {state}, {country} -> "
-                                        f"({location.latitude}, {location.longitude})")
-                        else:
-                            logger.warning(f"Coordenadas não encontradas para {state}, {country}")
-                    except Exception as e:
-                        logger.error(f"Erro ao buscar coordenadas para {state}, {country}: {e}")
+                if 'Country' in fieldnames and 'State' in fieldnames:
+                    process_row_with_country_state(row, geolocator, item)
+                elif 'warehouse' in fieldnames:
+                    process_row_with_warehouse(row, item)
+                else:
+                    logger.warning(
+                        "The CSV does not contain the expected columns ('Country', 'State' or 'warehouse'). No action will be taken.")
+                    return
 
-                # Escrever o item no arquivo XML
                 xml_file.write(ET.tostring(item, encoding="utf-8"))
 
-                # Aguardar para evitar bloqueio na API
-                time.sleep(1)
-
-        # Fechar a tag raiz
         xml_file.write(b'</root>\n')
-    logger.info(f"Arquivo XML gerado progressivamente em: {xml_output_path}")
 
-
-
+    logger.info(f"Conversion completed. XML saved in: {xml_output_path}")
 
 def validate_xml(xml_file_path, xsd_file_path):
-    """
-    Valida um arquivo XML contra um esquema XSD.
-    """
     try:
-        # Abrir e carregar o XSD como bytes
-        with open(xsd_file_path, 'rb') as xsd_file:  # Alterado para 'rb' (modo binário)
+        # Open and load XSD as bytes
+        with open(xsd_file_path, 'rb') as xsd_file:
             schema_root = etree.XML(xsd_file.read())
 
         schema = etree.XMLSchema(schema_root)
         parser = etree.XMLParser(schema=schema)
 
-        # Validar o XML
-        with open(xml_file_path, 'rb') as xml_file:  # Alterado para 'rb' (modo binário)
+        # Validate the XML
+        with open(xml_file_path, 'rb') as xml_file:
             etree.fromstring(xml_file.read(), parser)
         
         return True
     except etree.XMLSchemaError as e:
-        logger.error(f"Erro de validação do XML: {e}")
+        logger.error(f"XML validation error: {e}")
         return False
     except Exception as e:
-        logger.error(f"Erro ao validar o XML: {e}")
+        logger.error(f"Error validating XML: {e}")
         raise
 
-
 def find_coordinates(xml_file_path):
-    """
-    Busca longitude e latitude no arquivo XML usando XPath.
-    """
     tree = ET.parse(xml_file_path)
     root = tree.getroot()
 
@@ -107,9 +133,8 @@ def find_coordinates(xml_file_path):
 
     return coordinates
 
-
 def generate_xsd_from_xml(xml_file_path, xsd_output_path):
-    logger.info(f"Iniciando geração do XSD a partir do XML. Arquivo XML: {xml_file_path}")
+    logger.info(f"Starting XSD generation from XML. XML file: {xml_file_path}")
     try:
         tree = ET.parse(xml_file_path)
         root = tree.getroot()
@@ -135,26 +160,19 @@ def generate_xsd_from_xml(xml_file_path, xsd_output_path):
             for child in item:
                 if child.tag not in [elem.get("name") for elem in item_sequence.findall("xs:element")]:
                     xsd_type = infer_xsd_type(child.text)
-                    logger.info(f"Elemento '{child.tag}' inferido como '{xsd_type}'")
+                    logger.info(f"Element '{child.tag}' inferred as '{xsd_type}'")
                     ET.SubElement(item_sequence, "xs:element", name=child.tag, type=xsd_type, minOccurs="0")
 
         # Escrever o XSD em um arquivo
         xsd_tree = ET.ElementTree(schema)
         xsd_tree.write(xsd_output_path, encoding="utf-8", xml_declaration=True)
-        logger.info(f"XSD gerado com sucesso: {xsd_output_path}")
+        logger.info(f"XSD generated successfully: {xsd_output_path}")
 
     except Exception as e:
-        logger.error(f"Erro ao gerar o arquivo XSD: {e}", exc_info=True)
+        logger.error(f"Error generating XSD file: {e}", exc_info=True)
         raise
 
-
-
-
-
 def infer_xsd_type(value):
-    """
-    Infere o tipo XSD com base no valor fornecido.
-    """
     try:
         int(value)
         return "xs:integer"
@@ -166,17 +184,12 @@ def infer_xsd_type(value):
             if isinstance(value, str) and value.lower() in ["true", "false"]:
                 return "xs:boolean"
             return "xs:string"
-        
-        
-        
+
 def get_states_by_country(xml_file_path, country_name):
-    """
-    Retorna todos os estados associados a um país específico no XML.
-    """
     try:
         tree = ET.parse(xml_file_path)
         root = tree.getroot()
-        states = set()  # Usar set para evitar duplicados
+        states = set()
 
         for item in root.findall("item"):
             country = item.find("Country")
@@ -187,13 +200,39 @@ def get_states_by_country(xml_file_path, country_name):
 
         return list(states)
     except Exception as e:
-        logger.error(f"Erro ao buscar estados pelo país {country_name}: {e}")
+        logger.error(f"Error searching for states by country {country_name}: {e}")
         return []
 
+def get_info_by_cardinalpoint(xml_file_path, warehouse):
+    try:
+        tree = ET.parse(xml_file_path)
+        root = tree.getroot()
+
+        cardinalpoint_data = []
+
+        for item in root.findall("item"):
+            item_warehouse = item.find("warehouse")
+            if item_warehouse is not None and item_warehouse.text.strip().lower() == warehouse.strip().lower():
+                cardinalpoint_entry = {
+                    "date": item.findtext("date", "").strip(),
+                    "warehouse": item.findtext("warehouse", "").strip(),
+                    "client_type": item.findtext("client_type", "").strip(),
+                    "product_line": item.findtext("product_line", "").strip(),
+                    "quantity": int(item.findtext("quantity", "0").strip()),
+                    "unit_price": float(item.findtext("unit_price", "0.0").strip()),
+                    "total": float(item.findtext("total", "0.0").strip()),
+                    "payment": item.findtext("payment", "").strip()
+                }
+                cardinalpoint_data.append(cardinalpoint_entry)
+
+        return cardinalpoint_data
+    except Exception as e:
+        logger.error(f"Error retrieving data by cardinal point [{warehouse}]: {e}", exc_info=True)
+        return []
 
 if __name__ == '__main__':
     # Definir o caminho da mídia
-    MEDIA_PATH = os.getenv("MEDIA_PATH", r"C:\Users\User\OneDrive\Ambiente de Trabalho\E.I\IS") 
+    MEDIA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'media')
 
     # Caminhos dos arquivos
     csv_file_path = os.path.join(MEDIA_PATH, "received.csv")
@@ -202,35 +241,34 @@ if __name__ == '__main__':
 
     # Verificar se o XML já existe
     if os.path.exists(xml_output_path):
-        logger.info(f"O arquivo XML já existe: {xml_output_path}. Pulando a geração do XML.")
+        logger.info(f"The XML file already exists: {xml_output_path}.")
     else:
-        logger.info(f"Arquivo XML não encontrado. Gerando o XML: {xml_output_path}")
+        logger.info(f"XML file not found. Creating the XML: {xml_output_path}")
         csv_to_xml_with_coordinates(csv_file_path, xml_output_path)
 
     # Verificar se o XSD já existe
     if os.path.exists(xsd_output_path):
-        logger.info(f"O arquivo XSD já existe: {xsd_output_path}. Pulando a geração do XSD.")
+        logger.info(f"XSD file already exists: {xsd_output_path}.")
     else:
-        logger.info(f"Arquivo XSD não encontrado. Gerando o XSD: {xsd_output_path}")
+        logger.info(f"XSD file not found. Creating the XSD: {xsd_output_path}")
         try:
             generate_xsd_from_xml(xml_output_path, xsd_output_path)
         except Exception as e:
-            logger.error(f"Erro ao gerar o arquivo XSD: {e}", exc_info=True)
+            logger.error(f"Error creating XSD file: {e}", exc_info=True)
 
     # Validar o XML
     try:
         is_valid = validate_xml(xml_output_path, xsd_output_path)
         if is_valid:
-            logger.info("O XML é válido contra o XSD.")
+            logger.info("XML is valid against XSD.")
         else:
-            logger.warning("O XML não é válido contra o XSD.")
+            logger.warning("XML is not valid against XSD.")
     except Exception as e:
-        logger.error(f"Erro ao validar XML contra o XSD: {e}", exc_info=True)
-
+        logger.error(f"Error validating XML against XSD: {e}", exc_info=True)
 
     # Consulta XPath
     country_name = "USA"  # Substitua pelo nome do país que deseja buscar
-    print(f"Buscando estados do país {country_name} no XML...")
+    print(f"Fetching states of country {country_name} in XML...")
     states = get_states_by_country(xml_output_path, country_name)
-    print(f"Estados encontrados: {states}")
+    print(f"States found: {states}")
 

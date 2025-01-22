@@ -9,6 +9,7 @@ service FileService {
   rpc SendFileChunks (stream SendFileChunksRequest) returns (SendFileChunksResponse);
   rpc ProcessCSV (CSVRequest) returns (CoordinatesResponse);
   rpc GetStatesByCountry (CountryRequest) returns (StatesResponse);
+  rpc GetInfoByCardinalPoint (CardinalPointRequest) returns (CardinalPointResponse);
   rpc ConvertCSVToXML (ConvertCSVToXMLRequest) returns (ConvertCSVToXMLResponse);
   rpc ConvertXMLToXSD (ConvertXMLToXSDRequest) returns (ConvertXMLToXSDResponse);
   rpc ConvertXMLToDatabase (ConvertXMLToDatabaseRequest) returns (GenericResponse);
@@ -90,6 +91,27 @@ message StatesResponse {
 
 message StatesRequest {
   string country = 1;
+}
+
+message CardinalPointResponse {
+  repeated CardinalPointEntry data = 1;
+
+  message CardinalPointEntry {
+      string date = 1;
+      string warehouse = 2;
+      string client_type = 3;
+      string product_line = 4;
+      int32 quantity = 5;
+      float unit_price = 6;
+      float total = 7;
+      string payment = 8;
+      float latitude = 9;
+      float longitude = 10;
+  }
+}
+
+message CardinalPointRequest {
+  string warehouse = 1;
 }
 
 message ConvertXMLToDatabaseRequest {

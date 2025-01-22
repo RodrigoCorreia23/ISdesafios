@@ -1,5 +1,6 @@
 from django.urls import path
-from api.views.file_views import FileUploadView, FileUploadChunksView
+from .views.file_views import FileUploadView, FileUploadChunksView
+from .views.get_info_by_cardinalpoint import GetInfoByCardinalPointView
 from .views.users import GetAllUsers
 from .views.convert_csv_to_xml_view import ConvertCSVToXMLView
 from .views.convert_xml_to_xsd_view import ConvertXMLToXSDView
@@ -13,5 +14,6 @@ urlpatterns = [
     path('convert-csv-to-xml/', ConvertCSVToXMLView.as_view(), name='convert_csv_to_xml'),
     path('convert-xml-to-xsd/', ConvertXMLToXSDView.as_view(), name='convert_xml_to_xsd'),
     path('get-states-by-country/', GetStatesByCountryView.as_view(), name='get_states_by_country'),
+    path('get-info-by-cardinalpoint/', GetInfoByCardinalPointView.as_view(), name='get_info_by_cardinalpoint'),
     path('export-xml-to-db/', export_xml_to_db, name='export-xml-to-db'),
 ]

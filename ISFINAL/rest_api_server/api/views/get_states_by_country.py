@@ -9,9 +9,6 @@ from rest_api_server.settings import GRPC_PORT, GRPC_HOST
 logger = logging.getLogger("GetStatesByCountryView")
 
 class GetStatesByCountryView(APIView):
-    """
-    View to fetch states by country from the XML via gRPC.
-    """
     def post(self, request):
         try:
             # Extrair o nome do país do corpo da requisição

@@ -50,6 +50,11 @@ class FileServiceStub(object):
                 request_serializer=server__services__pb2.CountryRequest.SerializeToString,
                 response_deserializer=server__services__pb2.StatesResponse.FromString,
                 _registered_method=True)
+        self.GetInfoByCardinalPoint = channel.unary_unary(
+                '/server_services.FileService/GetInfoByCardinalPoint',
+                request_serializer=server__services__pb2.CardinalPointRequest.SerializeToString,
+                response_deserializer=server__services__pb2.CardinalPointResponse.FromString,
+                _registered_method=True)
         self.ConvertCSVToXML = channel.unary_unary(
                 '/server_services.FileService/ConvertCSVToXML',
                 request_serializer=server__services__pb2.ConvertCSVToXMLRequest.SerializeToString,
@@ -94,6 +99,12 @@ class FileServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def GetStatesByCountry(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetInfoByCardinalPoint(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -146,6 +157,11 @@ def add_FileServiceServicer_to_server(servicer, server):
                     servicer.GetStatesByCountry,
                     request_deserializer=server__services__pb2.CountryRequest.FromString,
                     response_serializer=server__services__pb2.StatesResponse.SerializeToString,
+            ),
+            'GetInfoByCardinalPoint': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetInfoByCardinalPoint,
+                    request_deserializer=server__services__pb2.CardinalPointRequest.FromString,
+                    response_serializer=server__services__pb2.CardinalPointResponse.SerializeToString,
             ),
             'ConvertCSVToXML': grpc.unary_unary_rpc_method_handler(
                     servicer.ConvertCSVToXML,
@@ -255,6 +271,33 @@ class FileService(object):
             '/server_services.FileService/GetStatesByCountry',
             server__services__pb2.CountryRequest.SerializeToString,
             server__services__pb2.StatesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetInfoByCardinalPoint(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/server_services.FileService/GetInfoByCardinalPoint',
+            server__services__pb2.CardinalPointRequest.SerializeToString,
+            server__services__pb2.CardinalPointResponse.FromString,
             options,
             channel_credentials,
             insecure,
