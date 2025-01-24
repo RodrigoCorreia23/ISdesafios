@@ -42,11 +42,11 @@ function a11yProps(index: number) {
 const XmlViewerDialog = React.forwardRef((_, ref) => {
   const [open, setOpen]     = React.useState(false)
   const [value, setValue]   = React.useState(0);
-  const [xml_filtered_by_city, setXmlFilteredByCity] = React.useState<string>("<cities></cities>");
+  const [xmlFilteredByProductLine, setXmlFilteredByProductLine] = React.useState<string>("<warehouses></warehouses>");
 
-  const [searchByCityForm, setSearchByCityForm]  = React.useState({
-    city: ''
-  })
+  const [searchByProductLineForm, setSearchByProductLineForm] = React.useState({
+    product_line: '',
+  });
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
@@ -66,10 +66,10 @@ const XmlViewerDialog = React.forwardRef((_, ref) => {
     e.preventDefault()
 
     const params = {
-        city: searchByCityForm.city
-    }
+      product_line: searchByProductLineForm.product_line,
+    };
 
-    const response = await fetch("/api/xml/filter-by-city", {
+    const response = await fetch(`/api/xml/filter-by-productline/`, {
         method: "POST",
         body: JSON.stringify(params),
         headers: {
@@ -84,7 +84,7 @@ const XmlViewerDialog = React.forwardRef((_, ref) => {
 
     const text      = await response.text()
 
-    setXmlFilteredByCity(text)
+    setXmlFilteredByProductLine(text);
   }
 
   return (
@@ -105,31 +105,31 @@ const XmlViewerDialog = React.forwardRef((_, ref) => {
 
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
-                    <Tab label="Search by city" {...a11yProps(0)} />
+                    <Tab label="Search by Product Line" {...a11yProps(0)} />
                 </Tabs>
             </Box>
             
             <CustomTabPanel value={value} index={0}>
                 <Box className='px-0' component="form" onSubmit={handleSubmit}>
                     <TextField
-                        label="Search by city name"
+                        label="Search by product line"
                         fullWidth
                         margin="normal"
-                        value={searchByCityForm.city}
-                        onChange={(e: any) => {setSearchByCityForm({...searchByCityForm, city: e.target.value})}}
+                        value={searchByProductLineForm.product_line}
+                        onChange={(e: any) => {setSearchByProductLineForm({...searchByProductLineForm, product_line: e.target.value})}}
                     />
 
                     <Button fullWidth type="submit" variant="contained" startIcon={<Search />} />
                 </Box>
 
-                <pre className='my-4 mx-0' style={{ fontFamily: "monospace" }}>
-                    <code>{xml_filtered_by_city}</code>
+                <pre style={{whiteSpace: 'pre-wrap', fontFamily: 'monospace', overflow: 'auto'}}>
+                  {xmlFilteredByProductLine.replace(/\\n/g, '\n')}
                 </pre>
             </CustomTabPanel>
-            
+
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <DialogActions>
+              <Button onClick={handleClose}>Cancel</Button>
         </DialogActions>
       </Dialog>
     </React.Fragment>

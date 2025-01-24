@@ -3,7 +3,6 @@ syntax = "proto3";
 package server_services;
 
 
-
 // Serviço FileService para processamento de CSV, validação de XML e consulta de estados
 service FileService {
   rpc SendFileChunks (stream SendFileChunksRequest) returns (SendFileChunksResponse);

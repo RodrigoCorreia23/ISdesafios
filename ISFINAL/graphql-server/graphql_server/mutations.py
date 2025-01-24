@@ -4,21 +4,6 @@ from .queries import CountryType
 from .models import MotorcycleSales
 from .queries import MotorcycleSalesType
 
-# Mutation para criar um novo país
-class CreateCountry(graphene.Mutation):
-    class Arguments:
-        country = graphene.String(required=True)
-        latitude = graphene.Float(required=True)
-        longitude = graphene.Float(required=True)
-
-    country_obj = graphene.Field(CountryType)
-
-    def mutate(self, info, country, latitude, longitude):
-        country_obj = Country.objects.create(country=country, latitude=latitude, longitude=longitude)
-        return CreateCountry(country_obj=country_obj)
-
-
-# Mutation para atualizar um país existente
 class UpdateCountry(graphene.Mutation):
     class Arguments:
         id = graphene.Int(required=True)
@@ -42,40 +27,6 @@ class UpdateCountry(graphene.Mutation):
         except Country.DoesNotExist:
             raise Exception("Country not found")
 
-# Mutation para criar um registo de venda de uma motocicleta
-class CreateMotorcycleSale(graphene.Mutation):
-    class Arguments:
-        date = graphene.Date(required=True)
-        warehouse = graphene.String(required=True)
-        client_type = graphene.String(required=True)
-        product_line = graphene.String(required=True)
-        quantity = graphene.Int(required=True)
-        unit_price = graphene.Float(required=True)
-        total = graphene.Float(required=True)
-        payment = graphene.String(required=True)
-        latitude = graphene.Float(required=True)
-        longitude = graphene.Float(required=True)
-
-    motorcycle_sales = graphene.Field(MotorcycleSalesType)
-
-    def mutate(self, info, date, warehouse, client_type, product_line, quantity,
-               unit_price, total, payment, latitude, longitude):
-        motorcycle_sales = MotorcycleSales.objects.create(
-            date=date,
-            warehouse=warehouse,
-            client_type=client_type,
-            product_line=product_line,
-            quantity=quantity,
-            unit_price=unit_price,
-            total=total,
-            payment=payment,
-            latitude=latitude,
-            longitude=longitude,
-        )
-        return CreateMotorcycleSale(motorcycle_sales=motorcycle_sales)
-
-
-# Mutation para atualizar um registo de venda de uma motocicleta
 class UpdateMotorcycleSale(graphene.Mutation):
     class Arguments:
         id = graphene.Int(required=True)
@@ -126,7 +77,5 @@ class UpdateMotorcycleSale(graphene.Mutation):
 
 # Classe que contém todas as mutations
 class Mutation(graphene.ObjectType):
-    create_country = CreateCountry.Field()
     update_country = UpdateCountry.Field()
-    create_motorcycle_sale = CreateMotorcycleSale.Field()
     update_motorcycle_sale = UpdateMotorcycleSale.Field()

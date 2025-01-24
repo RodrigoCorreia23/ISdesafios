@@ -2,8 +2,6 @@ import grpc
 import server_services_pb2
 import server_services_pb2_grpc
 
-
-
 def get_states(client_stub, country_name):
     request = server_services_pb2.CountryRequest(country=country_name)
     response = client_stub.GetStatesByCountry(request)

@@ -6,6 +6,7 @@ from .views.convert_csv_to_xml_view import ConvertCSVToXMLView
 from .views.convert_xml_to_xsd_view import ConvertXMLToXSDView
 from .views.get_states_by_country import GetStatesByCountryView
 from .views.import_xml_view import export_xml_to_db
+from .views.warehouses import GetWarehousesView, UpdateWarehouseView, FilterByProductLineView
 
 urlpatterns = [
     path('upload-file/', FileUploadView.as_view(), name='upload-file'),
@@ -16,4 +17,7 @@ urlpatterns = [
     path('get-states-by-country/', GetStatesByCountryView.as_view(), name='get_states_by_country'),
     path('get-info-by-cardinalpoint/', GetInfoByCardinalPointView.as_view(), name='get_info_by_cardinalpoint'),
     path('export-xml-to-db/', export_xml_to_db, name='export-xml-to-db'),
+    path('get-warehouses/', GetWarehousesView.as_view(), name='get-warehouses'),
+    path('warehouses/<int:id>/', UpdateWarehouseView.as_view(), name='update-warehouse'),
+    path('filter-by-productline/', FilterByProductLineView.as_view(), name='filter-by-productline'),
 ]

@@ -137,16 +137,13 @@ class FileService(server_services_pb2_grpc.FileServiceServicer):
             _warehouse = request.warehouse
             xml_file_path = os.path.join(MEDIA_PATH, "MotorcycleSalesAnalysis.xml")
 
-            # Verificar se o arquivo XML existe
             if not os.path.exists(xml_file_path):
                 context.set_details(f"XML file not found: {xml_file_path}")
                 context.set_code(grpc.StatusCode.NOT_FOUND)
                 return server_services_pb2.CardinalPointResponse()
 
-            # Obter os dados filtrados pelo ponto cardeal
             cardinalpoints_data = get_info_by_cardinalpoint(xml_file_path, _warehouse)
 
-            # Criar a resposta no formato esperado
             response = server_services_pb2.CardinalPointResponse()
 
             for point in cardinalpoints_data:

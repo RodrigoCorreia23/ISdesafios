@@ -1,14 +1,15 @@
-export interface City{
-    nome: string
-    latitude: number
-    longitude: number
-    id: number
+export interface Warehouse {
+    id: number;
+    region: string;
+    product_line: string;
+    latitude: number;
+    longitude: number;
 }
 
-export interface Cities{
-    cities: City[]
+export interface Warehouses {
+    warehouses: Warehouse[];
 }
 
-export interface GraphQlCities{
-    data: Cities
+export interface GraphQlWarehouses {
+    data: Warehouses;
 }

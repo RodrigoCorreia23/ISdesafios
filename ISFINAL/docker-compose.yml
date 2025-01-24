@@ -1,5 +1,4 @@
-version: "3.8"
-services: 
+services:
   grpc-server: 
     build: ./grpc-server 
     container_name: grpc-server 
@@ -112,6 +111,23 @@ services:
       - DBPORT=5432
     depends_on:
       - db
+    networks:
+      - app_network
+  
+  frontend-app:
+    build:
+      context: ./frontend-main
+    container_name: frontend-app
+    ports:
+      - "3000:3000"
+    environment:
+      - REST_API_BASE_URL=http://rest-api-server:8000
+      - GRAPHQL_API_BASE_URL=http://rest-api-server:8000
+      - NEXT_PUBLIC_URL=http://frontend-app:3000
+    command: [ "npm", "run", "dev" ]
+    depends_on:
+      - db
+      - rabbitmq
     networks:
       - app_network
 

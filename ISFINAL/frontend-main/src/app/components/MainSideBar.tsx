@@ -7,37 +7,35 @@ import XmlViewerDialog from './XmlViewer';
 import { Search } from '@mui/icons-material';
 import { redirect } from 'next/navigation';
 
-const Sidebar = ({ searchValue } : { searchValue: string }) => {
+const Sidebar = ({ searchValue }: { searchValue: string }) => {
     const uploadFilesDialogRef  = useRef<any>(null)
     const xmlViewerDialog       = useRef<any>(null)
 
-    const [searchByCityForm, setSearchByCityForm] = React.useState({
-        city: searchValue
+    const [searchByWarehouseForm, setSearchByWarehouseForm] = React.useState({
+        warehouseId: searchValue
     })
 
     const handleOpenUploadFilesDialog = () => {
-        if(!uploadFilesDialogRef || !uploadFilesDialogRef.current) return
-
-        uploadFilesDialogRef.current.handleClickOpen() // Call child's increment function
+        if (!uploadFilesDialogRef || !uploadFilesDialogRef.current) return;
+        uploadFilesDialogRef.current.handleClickOpen();
     }
 
     const handleXmlViewerDialog = () => {
-        if(!xmlViewerDialog || !xmlViewerDialog.current) return
-
-        xmlViewerDialog.current.handleClickOpen() // Call child's increment function
+        if (!xmlViewerDialog || !xmlViewerDialog.current) return;
+        xmlViewerDialog.current.handleClickOpen();
     }
 
     const handleSubmit = async (e: any) => {
-        e.preventDefault()
-    
-        redirect(`/?search=${searchByCityForm.city}`)
-      }
+        e.preventDefault();
+
+        redirect(`/?search=${searchByWarehouseForm.warehouseId}`);
+    }
 
     return (
         <>
             <UploadFilesDialog ref={uploadFilesDialogRef} />
             <XmlViewerDialog ref={xmlViewerDialog} />
-        
+
             <List
                 sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}
                 component="nav"
@@ -50,16 +48,27 @@ const Sidebar = ({ searchValue } : { searchValue: string }) => {
                 <ListItem>
                     <Box className='' component="form" onSubmit={handleSubmit}>
                         <TextField
-                            label="Search by city name"
+                            label="Search by warehouse ID"
                             fullWidth
                             margin="normal"
-                            value={searchByCityForm.city}
-                            onChange={(e: any) => {setSearchByCityForm({...searchByCityForm, city: e.target.value})}}
+                            value={searchByWarehouseForm.warehouseId}
+                            onChange={(e: any) => {
+                                setSearchByWarehouseForm({
+                                    ...searchByWarehouseForm,
+                                    warehouseId: e.target.value
+                                })
+                            }}
                         />
 
-                        <Button fullWidth type="submit" variant="contained" startIcon={<Search />} />
+                        <Button
+                            fullWidth
+                            type="submit"
+                            variant="contained"
+                            startIcon={<Search />}
+                        />
                     </Box>
                 </ListItem>
+
                 <ListItemButton onClick={handleOpenUploadFilesDialog}>
                     <ListItemText className="text-gray-600" primary="Upload File" />
                 </ListItemButton>
