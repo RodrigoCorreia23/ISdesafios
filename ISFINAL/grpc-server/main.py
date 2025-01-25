@@ -253,7 +253,7 @@ class FileService(server_services_pb2_grpc.FileServiceServicer):
             # Caminho para o arquivo XML gerado
             xml_file_path = csv_file_path.replace('.csv', '.xml')
 
-            # Função para converter CSV em XML (você precisa implementar esta função)
+            # Função para converter CSV em XML 
             csv_to_xml_with_coordinates(csv_file_path, xml_file_path)
 
             # Retornar a resposta
