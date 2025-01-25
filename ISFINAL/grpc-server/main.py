@@ -131,6 +131,82 @@ class FileService(server_services_pb2_grpc.FileServiceServicer):
             context.set_details(f"Failed: {e}")
             context.set_code(grpc.StatusCode.INTERNAL)
             return server_services_pb2.StatesResponse(states=[])
+        
+    def GetSalesByCountryAndYear(self, request, context):
+        try:
+            # Extração dos parâmetros da requisição gRPC
+            country_name = request.country
+            year = request.year
+            print(f"Country: {country_name}, Year: {year}")  # Depuração
+
+            # Caminho para o arquivo XML
+            xml_file_path = os.path.join(MEDIA_PATH, "Sales.xml")
+            print(f"XML Path: {xml_file_path}")  # Depuração
+
+            if not os.path.exists(xml_file_path):
+                context.set_details(f"XML file not found: {xml_file_path}")
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                return server_services_pb2.SalesResponse(sales=[])
+
+            # Chamando a função auxiliar com o XPath correto
+            sales = self.get_sales_by_country_and_year(xml_file_path, country_name, year)
+
+            # Construindo a resposta gRPC
+            response = server_services_pb2.SalesResponse()
+            for sale in sales:
+                response.sales.add(state=sale["state"], revenue=sale["revenue"])
+
+            return response
+        except Exception as e:
+            logger.error(f"Error in GetSalesByCountryAndYear: {e}", exc_info=True)
+            context.set_details(f"Failed: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return server_services_pb2.SalesResponse(sales=[])
+
+
+
+    def get_sales_by_country_and_year(xml_file_path, country, year):
+        from lxml import etree
+        tree = etree.parse(xml_file_path)
+
+        # XPath atualizado para usar <item>
+        xpath_query = f"//item[Country='{country}' and Year='{year}']"
+        sales_elements = tree.xpath(xpath_query)
+
+        sales = []
+        for sale in sales_elements:
+            state = sale.find("State").text
+            revenue = float(sale.find("Revenue").text)
+            sales.append({"state": state, "revenue": revenue})
+
+        return sales
+
+
+
+    def get_sales_by_country_and_year(self, xml_file_path, country, year):
+        from lxml import etree
+        tree = etree.parse(xml_file_path)
+
+        # XPath para filtrar vendas por país e ano
+        xpath_query = f"//item[Country='{country}' and Year='{year}']"
+        sales_elements = tree.xpath(xpath_query)
+
+        # Depuração: Exibir elementos encontrados
+        print(f"XPath Query: {xpath_query}")
+        print(f"Elements Found: {[etree.tostring(e, pretty_print=True).decode() for e in sales_elements]}")
+
+        sales = []
+        for sale in sales_elements:
+            state = sale.find("State").text
+            revenue = float(sale.find("Revenue").text)
+            sales.append({"state": state, "revenue": revenue})
+
+        return sales
+
+
+
+
+    
 
     def GetInfoByCardinalPoint(self, request, context):
         try:

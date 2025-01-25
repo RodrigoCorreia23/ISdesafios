@@ -7,6 +7,7 @@ from .views.convert_xml_to_xsd_view import ConvertXMLToXSDView
 from .views.get_states_by_country import GetStatesByCountryView
 from .views.import_xml_view import export_xml_to_db
 from .views.warehouses import GetWarehousesView, UpdateWarehouseView, FilterByProductLineView
+from .views.get_sales_by_country_and_year import GetSalesByCountryAndYearView
 
 urlpatterns = [
     path('upload-file/', FileUploadView.as_view(), name='upload-file'),
@@ -20,4 +21,5 @@ urlpatterns = [
     path('get-warehouses/', GetWarehousesView.as_view(), name='get-warehouses'),
     path('warehouses/<int:id>/', UpdateWarehouseView.as_view(), name='update-warehouse'),
     path('filter-by-productline/', FilterByProductLineView.as_view(), name='filter-by-productline'),
+    path('sales/by-country-and-year/', GetSalesByCountryAndYearView.as_view(), name='get_sales_by_country_and_year'),
 ]
