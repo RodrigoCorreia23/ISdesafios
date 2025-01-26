@@ -3,12 +3,41 @@ import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.renderers import BaseRenderer
+from xml.etree.ElementTree import Element, SubElement, tostring
 from ..grpc import server_services_pb2, server_services_pb2_grpc
 from rest_api_server.settings import GRPC_PORT, GRPC_HOST
 
 logger = logging.getLogger("GetSalesByCountryAndYearView")
 
+class XMLRenderer(BaseRenderer):
+    media_type = "application/xml"
+    format = "xml"
+
+    def render(self, data, media_type=None, renderer_context=None):
+        # Criar o elemento raiz
+        root = Element("response")
+
+        # Adicionar elementos ao XML
+        for key, value in data.items():
+            if isinstance(value, list):
+                list_element = SubElement(root, key)
+                for item in value:
+                    item_element = SubElement(list_element, "sale")
+                    for subkey, subvalue in item.items():
+                        sub_element = SubElement(item_element, subkey)
+                        sub_element.text = str(subvalue)
+            else:
+                element = SubElement(root, key)
+                element.text = str(value)
+
+        # Converter para string
+        return tostring(root, encoding="utf-8", method="xml")
+
+
 class GetSalesByCountryAndYearView(APIView):
+    renderer_classes = [XMLRenderer]
+
     def post(self, request):
         try:
             # Extrair o nome do país e o ano do corpo da requisição
@@ -27,14 +56,17 @@ class GetSalesByCountryAndYearView(APIView):
             # Chamar o método gRPC
             response = stub.GetSalesByCountryAndYear(grpc_request)
 
-            # Converter a resposta para JSON serializável
+            # Converter a resposta para um formato serializável
             sales_list = [{"state": sale.state, "revenue": sale.revenue} for sale in response.sales]
 
-            return Response({
-                "country": country,
-                "year": year,
-                "sales": sales_list
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "country": country,
+                    "year": year,
+                    "sales": sales_list
+                },
+                status=status.HTTP_200_OK,
+            )
 
         except grpc.RpcError as e:
             logger.error(f"gRPC call failed: {e.details()}")
